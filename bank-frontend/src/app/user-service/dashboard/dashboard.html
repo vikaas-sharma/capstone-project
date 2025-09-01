@@ -1,0 +1,200 @@
+    <div class="dashboard-container">
+      <header class="dashboard-header">
+        <h1>Banking Dashboard</h1>
+        <div class="header-actions">
+          <span>Welcome {{currentUser.username}}, User ID: {{userId}}</span>
+          <button (click)="onLogout()" class="logout-btn">Logout</button>
+        </div>
+      </header>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button 
+          (click)="activeTab = 'accounts'" 
+          [class.active]="activeTab === 'accounts'"
+          class="tab-btn">
+          My Accounts
+        </button>
+        <button 
+          (click)="activeTab = 'create'" 
+          [class.active]="activeTab === 'create'"
+          class="tab-btn">
+          Create Account
+        </button>
+        <button 
+          (click)="activeTab = 'transfer'" 
+          [class.active]="activeTab === 'transfer'"
+          class="tab-btn">
+          Transfer Money
+        </button>
+        <button 
+          (click)="activeTab = 'transactions'" 
+          [class.active]="activeTab === 'transactions'"
+          class="tab-btn">
+          View Transactions
+        </button>
+          <button (click)="activeTab = 'profile'" [class.active]="activeTab === 'profile'" class="tab-btn">
+    My Profile
+  </button>
+      </nav>
+
+      <!-- Content Area -->
+      <main class="dashboard-content">
+        
+         <!-- ✅ Profile Tab -->
+  <div *ngIf="activeTab === 'profile'" class="tab-content">
+    <h2>My Profile</h2>
+
+    <!-- View Mode -->
+    <div *ngIf="!isEditingProfile && currentUser" class="card p-3 shadow-sm">
+      <p><strong>Username:</strong> {{currentUser.username}}</p>
+      <p><strong>Address:</strong> {{currentUser.address}}</p>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" (click)="startEditProfile()">Edit Profile</button>
+      </div>
+    </div>
+
+    <!-- Edit Mode -->
+    <div *ngIf="isEditingProfile" class="card p-3 shadow-sm">
+      <form (ngSubmit)="onUpdateProfile()">
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" [(ngModel)]="editUser.username" name="username" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Address</label>
+          <input type="text" class="form-control" [(ngModel)]="editUser.address" name="address" required>
+        </div>
+        <button type="submit" class="btn btn-success me-2">Save</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelEditProfile()">Cancel</button>
+      </form>
+    </div>
+  </div>
+  
+        <!-- My Accounts Tab -->
+        <div *ngIf="activeTab === 'accounts'" class="tab-content">
+          <h2>My Accounts</h2>
+          <button (click)="loadUserAccounts()" class="refresh-btn">Refresh Accounts</button>
+          
+          <div *ngIf="accounts.length === 0" class="no-data">
+            No accounts found. Create your first account!
+          </div>
+          
+          <div class="accounts-grid">
+            <div *ngFor="let account of accounts" class="account-card">
+              <h3>{{account.accountType}} Account</h3>
+              <p class="balance">Balance: ₹{{account.accountBalance | number}}</p>
+              <p class="account-id">Account ID: {{account.accountId}}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Create Account Tab -->
+        <div *ngIf="activeTab === 'create'" class="tab-content">
+          <h2>Create New Account</h2>
+          <form (ngSubmit)="onCreateAccount()" class="create-form">
+            <div class="form-group">
+              <label>Account Type:</label>
+              <select [(ngModel)]="newAccount.accountType" name="accountType" required>
+                <option value="">Select Account Type</option>
+                <option value="Savings">Savings</option>
+                <option value="Current">Current</option>
+                <option value="Fixed Deposit">Fixed Deposit</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Initial Balance:</label>
+              <input 
+                type="number" 
+                [(ngModel)]="newAccount.accountBalance" 
+                name="balance" 
+                min="1000"
+                required>
+            </div>
+            
+            <div class="form-group">
+              <label>Secret PIN:</label>
+              <input 
+                type="password" 
+                [(ngModel)]="newAccount.secretPassword" 
+                name="pin" 
+                required>
+            </div>
+            
+            <button type="submit" class="submit-btn">Create Account</button>
+          </form>
+        </div>
+
+        <!-- Transfer Money Tab -->
+        <div *ngIf="activeTab === 'transfer'" class="tab-content">
+          <h2>Transfer Money</h2>
+          <form (ngSubmit)="onTransferMoney()" class="transfer-form">
+            <div class="form-group">
+              <label>From Account:</label>
+              <select [(ngModel)]="transferData.fromId" name="fromAccount" required>
+                <option value="">Select From Account</option>
+                <option *ngFor="let account of accounts" [value]="account.accountId">
+                  {{account.accountType}} - ₹{{account.accountBalance | number}} (ID: {{account.accountId}})
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>To Account ID:</label>
+              <input 
+                type="number" 
+                [(ngModel)]="transferData.toId" 
+                name="toAccount" 
+                placeholder="Enter recipient account ID"
+                required>
+            </div>
+            
+            <div class="form-group">
+              <label>Amount:</label>
+              <input 
+                type="number" 
+                [(ngModel)]="transferData.amount" 
+                name="amount" 
+                min="1"
+                required>
+            </div>
+            
+            <button type="submit" class="submit-btn">Transfer Money</button>
+          </form>
+        </div>
+
+        <!-- View Transactions Tab -->
+        <div *ngIf="activeTab === 'transactions'" class="tab-content">
+          <h2>Transaction History</h2>
+          
+          <div class="transaction-filter">
+            <select [(ngModel)]="selectedAccountId" (ngModelChange)="loadTransactions()">
+              <option value="">Select Account to View Transactions</option>
+              <option *ngFor="let account of accounts" [value]="account.accountId">
+                {{account.accountType}} Account (ID: {{account.accountId}})
+              </option>
+            </select>
+          </div>
+
+          <div *ngIf="transactions.length === 0 && selectedAccountId" class="no-data">
+            No transactions found for this account.
+          </div>
+
+          <div class="transactions-list">
+            <div *ngFor="let transaction of transactions" class="transaction-item">
+              <div class="transaction-info">
+                <span class="transaction-type">{{transaction.transactionType}}</span>
+                <span class="transaction-amount">₹{{transaction.amount | number}}</span>
+              </div>
+              <div class="transaction-details">
+                <p>From Account: {{transaction.frmAccountId}}</p>
+                <p>To Account: {{transaction.toAccountId}}</p>
+                <p *ngIf="transaction.timestamp">Date: {{transaction.timestamp | date}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
